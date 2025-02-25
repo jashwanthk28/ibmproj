@@ -11,22 +11,32 @@ jobs:
     steps:  
     - name: Checkout Repository  
       uses: actions/checkout@v2  
-    - name: Build Docker Image  
-      run: docker build -t myapp:latest .  
-    - name: Log in to IBM Cloud Container Registry  
-      run: ibmcloud cr login  
-    - name: Tag and Push Image  
+
+    - name: Install IBM Cloud CLI  
       run: |  
-        docker tag myapp:latest <REGISTRY_URL>/<namespace>/myapp:latest  
-        docker push <REGISTRY_URL>/<namespace>/myapp:latest  
-  
+        curl -fsSL https://clis.cloud.ibm.com/install/linux | sh  
+        ibmcloud --version  
+
+    - name: Log in to IBM Cloud Container Registry  
+      run: |  
+        ibmcloud login --apikey ${{ secrets.IBM_CLOUD_API_KEY }} -r us-south  
+        ibmcloud cr login  
+
+    - name: Build and Push Docker Image  
+      run: |  
+        docker build -t myapp:latest .  
+        docker tag myapp:latest us.icr.io/my-namespace/myapp:latest  
+        docker push us.icr.io/my-namespace/myapp:latest  
+
   deploy:  
     needs: build  
     runs-on: ubuntu-latest  
     steps:  
     - name: Configure IBM Cloud CLI  
-      run: ibmcloud ks cluster config --cluster <cluster-name>  
+      run: |  
+        ibmcloud ks cluster config --cluster my-cluster  
+      
     - name: Deploy to Kubernetes  
       run: |  
         kubectl apply -f deployment.yaml  
-        kubectl apply -f service.yaml
+        kubectl apply -f service.yaml  
