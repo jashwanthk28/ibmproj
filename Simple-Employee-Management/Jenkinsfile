@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "simple-employee-management"
+        DOCKER_REGISTRY = "your-dockerhub-username"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/yourusername/simple-employee-management.git'
+            }
+        }
+
+        stage('Build Application') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:latest ."
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh "docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest"
+                }
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                sh "docker run -d -p 8080:8080 --name employee-management $DOCKER_REGISTRY/$IMAGE_NAME:latest"
+            }
+        }
+    }
+}

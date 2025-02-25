@@ -1,0 +1,7 @@
+replicaCount: 1
+image:
+  repository: aryaa19/simple-employee-management
+  tag: latest
+service:
+  type: ClusterIP
+  port: 8080
