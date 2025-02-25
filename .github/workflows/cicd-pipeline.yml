@@ -1,0 +1,32 @@
+name: CI/CD Pipeline  
+on:  
+  push:  
+    branches: [main]  
+  pull_request:  
+    branches: [main]  
+
+jobs:  
+  build:  
+    runs-on: ubuntu-latest  
+    steps:  
+    - name: Checkout Repository  
+      uses: actions/checkout@v2  
+    - name: Build Docker Image  
+      run: docker build -t myapp:latest .  
+    - name: Log in to IBM Cloud Container Registry  
+      run: ibmcloud cr login  
+    - name: Tag and Push Image  
+      run: |  
+        docker tag myapp:latest <REGISTRY_URL>/<namespace>/myapp:latest  
+        docker push <REGISTRY_URL>/<namespace>/myapp:latest  
+  
+  deploy:  
+    needs: build  
+    runs-on: ubuntu-latest  
+    steps:  
+    - name: Configure IBM Cloud CLI  
+      run: ibmcloud ks cluster config --cluster <cluster-name>  
+    - name: Deploy to Kubernetes  
+      run: |  
+        kubectl apply -f deployment.yaml  
+        kubectl apply -f service.yaml
